@@ -8,8 +8,19 @@ const (
 	// Identifier
 	IDENT = "IDENT"
 
+	GTHAN = ">"
+	LTHAN = "<"
+
+	GEQUAL = "GEQUAL"
+	LEQUAL = "LEQUAL"
+
+	INCREMENT = "INCREMENT"
+	DECREMENT = "DRCREMENT"
+
 	// Operators
 	ASSIGN   = "="
+	EQUAL    = "EQUAL"
+	NOTEQUAL = "NOTEQUAL"
 	PLUS     = "+"
 	MINUS    = "-"
 	BANG     = "!"
@@ -21,10 +32,12 @@ const (
 	SEMICOLON = ";"
 
 	// Brackets
-	LPAREN = "("
-	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// Keywords
 	FUNCTION = "FUNC"
@@ -37,8 +50,9 @@ const (
 	RETURN   = "RETURN"
 
 	// Types
-	STRING = "STRING"
-	NUMBER = "NUMBER"
+	STRING  = "STRING"
+	INTEGER = "INTEGER"
+	FLOAT   = "FLOAT"
 )
 
 type TokenType string
@@ -46,7 +60,11 @@ type TokenType string
 type Token struct {
 	Type    TokenType
 	Literal string
-	
+}
+
+func (t *Token) String() string {
+	token := "Type: " + string(t.Type) + " Literal: " + t.Literal
+	return token
 }
 
 var keywords = map[string]TokenType{
@@ -60,7 +78,7 @@ var keywords = map[string]TokenType{
 	"false":  FALSE,
 }
 
-func keywordLookUp(word string) TokenType {
+func KeywordLookUp(word string) TokenType {
 	if tok, ok := keywords[word]; ok {
 		return tok
 	}

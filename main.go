@@ -1,5 +1,11 @@
 package main
 
+import (
+	"os"
+
+	"github.com/EVFUBS/AlphaLang/repl"
+)
+
 func main() {
-	println("Hello, world!")
+	repl.Start(os.Stdin, os.Stdout)
 }

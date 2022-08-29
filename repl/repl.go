@@ -21,6 +21,13 @@ func Start(in io.Reader, out io.Writer) {
 		}
 		line := scanner.Text()
 		l := lexer.New(line)
+
+		/* tok := l.NextToken()
+		for tok.Type != token.EOF {
+			println(tok.String())
+			tok = l.NextToken()
+		} */
+
 		p := parser.New(l)
 		ast := p.ParseProgram()
 		for _, statement := range ast.Statements {

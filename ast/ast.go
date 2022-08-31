@@ -147,10 +147,31 @@ func (es *ExpressionStatement) String() string {
 	return output
 }
 
+type ForStatement struct {
+	Initializer VarStatement
+	Conditional AstExpression
+	Increment   ExpressionStatement
+	Body        BlockStatement
+}
+
+func (fs *ForStatement) StatementNode() {}
+func (fs *ForStatement) String() string {
+	var output string
+
+	output += "ForStatement("
+	output += fs.Initializer.String()
+	output += fs.Conditional.String()
+	output += fs.Increment.String()
+	output += ")"
+	output += fs.Body.String()
+	output += ")"
+	return output
+}
+
 //expressions
 type InfixExpression struct {
 	Left     AstExpression
-	Operator string
+	Operator *token.Token
 	Right    AstExpression
 }
 
@@ -160,7 +181,7 @@ func (ie *InfixExpression) String() string {
 
 	output += "InfixExpr("
 	output += ie.Left.String()
-	output += ie.Operator
+	output += ie.Operator.Literal
 	output += ie.Right.String()
 	output += ")"
 
@@ -168,12 +189,31 @@ func (ie *InfixExpression) String() string {
 }
 
 type PrefixExpression struct {
-	Prefix     string
+	Prefix     *token.Token
 	Expression AstExpression
 }
 
 func (pe *PrefixExpression) ExpressionNode() {}
 func (pe *PrefixExpression) String() string  { return "pe" }
+
+type CallExpression struct {
+	Function  AstExpression
+	Arguments []AstExpression
+}
+
+func (ce *CallExpression) ExpressionNode() {}
+func (ce *CallExpression) String() string {
+	var output string
+
+	output += "Call("
+	output += ce.Function.String()
+	output += ")"
+	for _, arg := range ce.Arguments {
+		output += arg.String()
+	}
+	output += ")"
+	return output
+}
 
 type IdentiferLiteral struct {
 	Token token.Token
@@ -256,7 +296,7 @@ func (bl *BooleanLiteral) String() string {
 }
 
 type FunctionLiteral struct {
-	Name       string
+	Name       AstExpression
 	Parameters []IdentiferLiteral
 	Body       BlockStatement
 }
@@ -266,6 +306,7 @@ func (fl *FunctionLiteral) String() string {
 	var output string
 
 	output += "Func( \n"
+	output += fl.Name.String()
 	output += "Params("
 	for _, ident := range fl.Parameters {
 		output += ident.String()

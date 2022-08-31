@@ -15,7 +15,7 @@ const (
 	LEQUAL = "LEQUAL"
 
 	INCREMENT = "INCREMENT"
-	DECREMENT = "DRCREMENT"
+	DECREMENT = "DECREMENT"
 
 	// Operators
 	ASSIGN   = "="
@@ -48,6 +48,7 @@ const (
 	ELIF     = "ELIF"
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
+	FOR      = "FOR"
 
 	// Types
 	STRING  = "STRING"
@@ -76,6 +77,7 @@ var keywords = map[string]TokenType{
 	"var":    VAR,
 	"true":   TRUE,
 	"false":  FALSE,
+	"for":    FOR,
 }
 
 func KeywordLookUp(word string) TokenType {

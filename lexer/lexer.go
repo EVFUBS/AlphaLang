@@ -140,6 +140,7 @@ func (l *Lexer) NextToken() *token.Token {
 		}
 	case '-':
 		if l.peekChar() == '=' {
+			l.readChar()
 			newToken = &token.Token{Type: token.DECREMENT, Literal: "-="}
 		} else {
 			newToken = &token.Token{Type: token.MINUS, Literal: "-"}

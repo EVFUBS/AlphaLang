@@ -14,6 +14,9 @@ type Parser struct {
 	nextToken *token.Token
 }
 
+type InfixFunction func(node ast.AstExpression) ast.AstExpression
+type PrefixFunction func() ast.AstExpression
+
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l}
 	p.nextToken = p.l.NextToken()
@@ -49,6 +52,8 @@ func (p *Parser) Parse() *ast.AstStatement {
 		statement = p.ParseReturnStatement()
 	case token.IF:
 		statement = p.ParseIfStatement()
+	case token.FOR:
+		statement = p.ParseForStatement()
 	default:
 		statement = p.ParseExpressionStatement()
 	}
@@ -73,29 +78,36 @@ func (p *Parser) ParseExpression() ast.AstExpression {
 		node = p.ParseStringLiteral()
 	}
 
-	if _, ok := InfixExpressions[p.nextToken.Type]; ok {
+	/* if _, ok := InfixExpressions[p.nextToken.Type]; ok {
 		node = p.parseInfixExpression(node)
-	}
+	} */
 
+	// precedence parsing
+	var infixOperations = map[token.TokenType]InfixFunction{
+		token.PLUS:      p.parseInfixExpression,
+		token.MINUS:     p.parseInfixExpression,
+		token.ASTERISK:  p.parseInfixExpression,
+		token.SLASH:     p.parseInfixExpression,
+		token.EQUAL:     p.parseInfixExpression,
+		token.NOTEQUAL:  p.parseInfixExpression,
+		token.LTHAN:     p.parseInfixExpression,
+		token.GTHAN:     p.parseInfixExpression,
+		token.LPAREN:    p.parseCallExpression,
+		token.INCREMENT: p.parseInfixExpression,
+		token.DECREMENT: p.parseInfixExpression,
+	}
+	if _, ok := infixOperations[p.nextToken.Type]; ok {
+		node = infixOperations[p.nextToken.Type](node)
+	}
 	return node
 }
 
-//change to cleaner method later
-//add ( infix to check for function calls
-var InfixExpressions = map[token.TokenType]string{
-	token.PLUS:     "+",
-	token.MINUS:    "-",
-	token.ASTERISK: "*",
-	token.SLASH:    "/",
-	token.GTHAN:    "<",
-	token.LTHAN:    ">",
-}
-
+//Infix Parsing
 // need to consider precedence
-func (p *Parser) parseInfixExpression(node ast.AstExpression) *ast.InfixExpression {
+func (p *Parser) parseInfixExpression(node ast.AstExpression) ast.AstExpression {
 	left := node
 	p.AdvanceToken()
-	operator := p.curToken.Literal
+	operator := p.curToken
 	p.AdvanceToken()
 	right := p.ParseExpression()
 	newNode := &ast.InfixExpression{
@@ -104,6 +116,16 @@ func (p *Parser) parseInfixExpression(node ast.AstExpression) *ast.InfixExpressi
 		Right:    right,
 	}
 	return newNode
+}
+
+func (p *Parser) parseCallExpression(node ast.AstExpression) ast.AstExpression {
+	p.AdvanceToken()
+	p.AdvanceToken()
+	list := p.parseExpressionList(token.RPAREN)
+	return &ast.CallExpression{
+		Function:  node,
+		Arguments: list,
+	}
 }
 
 //Statement Parsing
@@ -136,6 +158,15 @@ func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
 	switch p.curToken.Type {
 	case token.FUNCTION:
 		exprStatement.Expression = p.ParseFunctionLiteral()
+	}
+
+	switch p.nextToken.Type {
+	case token.LPAREN:
+		exprStatement.Expression = p.ParseExpression()
+	case token.INCREMENT:
+		exprStatement.Expression = p.ParseExpression()
+	case token.DECREMENT:
+		exprStatement.Expression = p.ParseExpression()
 	}
 
 	return &exprStatement
@@ -191,6 +222,25 @@ func (p *Parser) ParseIfStatement() *ast.IfStatement {
 
 }
 
+func (p *Parser) ParseForStatement() *ast.ForStatement {
+	var ForStatement ast.ForStatement
+
+	p.AdvanceToken()
+	ForStatement.Initializer = *p.ParseVarStatement()
+	p.AdvanceToken()
+	p.AdvanceToken()
+	ForStatement.Conditional = p.ParseExpression()
+	p.AdvanceToken()
+	p.AdvanceToken()
+	ForStatement.Increment = *p.ParseExpressionStatement()
+	p.CheckTokenAdvance(token.LBRACE)
+	ForStatement.Body = *p.ParseBlockStatement()
+	p.CheckTokenAdvance(token.RBRACE)
+	return &ForStatement
+}
+
+//for var x = 10; x < 11; x += 1 { return a }
+
 //Literal Parsing
 func (p *Parser) ParseIdentiferLiteral() *ast.IdentiferLiteral {
 	return &ast.IdentiferLiteral{
@@ -233,9 +283,8 @@ func (p *Parser) ParseStringLiteral() *ast.StringLiteral {
 func (p *Parser) ParseFunctionLiteral() *ast.FunctionLiteral {
 	var function ast.FunctionLiteral
 
-	//p.AdvanceToken()
 	p.CheckTokenAdvance(token.IDENT)
-	function.Name = p.curToken.Literal
+	function.Name = p.ParseIdentiferLiteral()
 	p.AdvanceToken()
 	p.AdvanceToken()
 
@@ -251,7 +300,6 @@ func (p *Parser) ParseFunctionLiteral() *ast.FunctionLiteral {
 	p.AdvanceToken()
 	function.Body = *p.ParseBlockStatement()
 	p.AdvanceToken()
-	//println(function.Body.String())
 
 	return &function
 }
@@ -270,6 +318,20 @@ func (p *Parser) nextTokenIs(wanted token.TokenType) bool {
 		return true
 	}
 	return false
+}
+
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.AstExpression {
+	var expressions []ast.AstExpression
+
+	for p.curToken.Type != end {
+		if p.curToken.Type == token.COMMA {
+			p.AdvanceToken()
+		}
+		expressions = append(expressions, p.ParseExpression())
+		p.AdvanceToken()
+	}
+
+	return expressions
 }
 
 // func test(a,b){return a}

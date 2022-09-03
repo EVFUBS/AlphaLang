@@ -30,8 +30,15 @@ func Start(in io.Reader, out io.Writer) {
 
 		p := parser.New(l)
 		ast := p.ParseProgram()
-		for _, statement := range ast.Statements {
-			fmt.Println(statement.String())
+
+		if len(p.Errors()) > 0 {
+			for _, err := range p.Errors() {
+				fmt.Println(err)
+			}
+		} else {
+			for _, statement := range ast.Statements {
+				fmt.Println(statement.String())
+			}
 		}
 	}
 }

@@ -27,6 +27,14 @@ type Program struct {
 	Statements []AstStatement
 }
 
+func (p *Program) String() string {
+	var out string
+	for _, s := range p.Statements {
+		out += s.String()
+	}
+	return out
+}
+
 //statements
 type BlockStatement struct {
 	Statements []AstStatement
@@ -148,9 +156,9 @@ func (es *ExpressionStatement) String() string {
 }
 
 type ForStatement struct {
-	Initializer VarStatement
+	Initializer AstStatement
 	Conditional AstExpression
-	Increment   ExpressionStatement
+	Increment   AstStatement
 	Body        BlockStatement
 }
 
@@ -194,7 +202,15 @@ type PrefixExpression struct {
 }
 
 func (pe *PrefixExpression) ExpressionNode() {}
-func (pe *PrefixExpression) String() string  { return "pe" }
+func (pe *PrefixExpression) String() string {
+	var output string
+
+	output += "Prefix("
+	output += pe.Prefix.Literal
+	output += pe.Expression.String()
+	output += ")"
+	return output
+}
 
 type CallExpression struct {
 	Function  AstExpression
@@ -207,7 +223,7 @@ func (ce *CallExpression) String() string {
 
 	output += "Call("
 	output += ce.Function.String()
-	output += ")"
+	output += "Arguments("
 	for _, arg := range ce.Arguments {
 		output += arg.String()
 	}
@@ -313,6 +329,58 @@ func (fl *FunctionLiteral) String() string {
 	}
 	output += ") \n"
 	output += fl.Body.String()
+	output += ")"
+
+	return output
+}
+
+type ArrayLiteral struct {
+	Elements []AstExpression
+}
+
+func (al *ArrayLiteral) ExpressionNode() {}
+func (al *ArrayLiteral) String() string {
+	var output string
+
+	output += "Array("
+	for _, elem := range al.Elements {
+		output += elem.String()
+	}
+	output += ")"
+
+	return output
+}
+
+type IndexExpression struct {
+	Left  AstExpression
+	Index AstExpression
+}
+
+func (ie *IndexExpression) ExpressionNode() {}
+func (ie *IndexExpression) String() string {
+	var output string
+
+	output += "Index("
+	output += ie.Left.String()
+	output += ie.Index.String()
+	output += ")"
+
+	return output
+}
+
+type HashLiteral struct {
+	Pairs map[AstExpression]AstExpression
+}
+
+func (hl *HashLiteral) ExpressionNode() {}
+func (hl *HashLiteral) String() string {
+	var output string
+
+	output += "Hash("
+	for key, value := range hl.Pairs {
+		output += key.String()
+		output += value.String()
+	}
 	output += ")"
 
 	return output

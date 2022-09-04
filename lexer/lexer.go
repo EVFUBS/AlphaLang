@@ -149,6 +149,8 @@ func (l *Lexer) NextToken() *token.Token {
 		newToken = &token.Token{Type: token.ASTERISK, Literal: "*"}
 	case '/':
 		newToken = &token.Token{Type: token.SLASH, Literal: "/"}
+	case '%':
+		newToken = &token.Token{Type: token.MODULUS, Literal: "%"}
 	case 0:
 		newToken = &token.Token{Type: token.EOF, Literal: "EOF"}
 	case '!':

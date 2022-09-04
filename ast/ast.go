@@ -7,7 +7,7 @@ import (
 	"github.com/EVFUBS/AlphaLang/token"
 )
 
-//interfaces
+// interfaces
 type AstNode interface {
 	String() string
 }
@@ -22,7 +22,7 @@ type AstStatement interface {
 	StatementNode()
 }
 
-//program
+// program
 type Program struct {
 	Statements []AstStatement
 }
@@ -35,7 +35,7 @@ func (p *Program) String() string {
 	return out
 }
 
-//statements
+// statements
 type BlockStatement struct {
 	Statements []AstStatement
 }
@@ -56,7 +56,7 @@ func (bs *BlockStatement) String() string {
 }
 
 type VarStatement struct {
-	Identifer AstExpression
+	Identifer IdentiferLiteral
 	Value     AstExpression
 }
 
@@ -176,7 +176,7 @@ func (fs *ForStatement) String() string {
 	return output
 }
 
-//expressions
+// expressions
 type InfixExpression struct {
 	Left     AstExpression
 	Operator *token.Token

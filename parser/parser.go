@@ -71,7 +71,7 @@ func (p *Parser) Parse() *ast.AstStatement {
 	return &statement
 }
 
-//Expression Parsing
+// Expression Parsing
 func (p *Parser) ParseExpression() ast.AstExpression {
 	var node ast.AstExpression
 
@@ -107,6 +107,7 @@ func (p *Parser) ParseExpression() ast.AstExpression {
 		token.MINUS:     p.parseInfixExpression,
 		token.ASTERISK:  p.parseInfixExpression,
 		token.SLASH:     p.parseInfixExpression,
+		token.MODULUS:   p.parseInfixExpression,
 		token.EQUAL:     p.parseInfixExpression,
 		token.NOTEQUAL:  p.parseInfixExpression,
 		token.LTHAN:     p.parseInfixExpression,
@@ -118,13 +119,14 @@ func (p *Parser) ParseExpression() ast.AstExpression {
 	}
 	if _, ok := infixOperations[p.nextToken.Type]; ok {
 		node = infixOperations[p.nextToken.Type](node)
+		node = p.sortPrecedence(node.(*ast.InfixExpression))
 		return node
 	}
 
 	return node
 }
 
-//Infix Parsing
+// Infix Parsing
 // need to consider precedence
 func (p *Parser) parseInfixExpression(node ast.AstExpression) ast.AstExpression {
 	left := node
@@ -137,12 +139,6 @@ func (p *Parser) parseInfixExpression(node ast.AstExpression) ast.AstExpression 
 		Operator: operator,
 		Right:    right,
 	}
-
-	switch expression := left.(type) {
-	case *ast.InfixExpression:
-		p.sortPrecedence(expression, newNode)
-	}
-
 	return newNode
 }
 
@@ -158,18 +154,23 @@ func (p *Parser) parsePrefixExpression() ast.AstExpression {
 
 var precedence = map[token.TokenType]int{
 	token.PLUS:     1,
-	token.MINUS:    1,
-	token.ASTERISK: 2,
-	token.SLASH:    2,
+	token.MINUS:    2,
+	token.ASTERISK: 3,
+	token.SLASH:    4,
 }
 
-func (p *Parser) sortPrecedence(left, right *ast.InfixExpression) {
-	if precedence[left.Operator.Type] > precedence[right.Operator.Type] {
-		left.Right = p.parseInfixExpression(left.Right)
-	} else {
-		right.Left = p.parseInfixExpression(right.Left)
+func (p *Parser) sortPrecedence(node *ast.InfixExpression) *ast.InfixExpression {
+	// if right node is infix expression
+	if right, ok := node.Right.(*ast.InfixExpression); ok {
+		// if right node has higher precedence
+		if precedence[node.Operator.Type] > precedence[right.Operator.Type] {
+			// swap
+			node.Right = right.Left
+			right.Left = node
+			return p.sortPrecedence(right)
+		}
 	}
-	println("thing")
+	return node
 }
 
 func (p *Parser) parseCallExpression(node ast.AstExpression) ast.AstExpression {
@@ -207,21 +208,21 @@ func (p *Parser) parseHashLiteral() ast.AstExpression {
 	return &hashLiteral
 }
 
-//Statement Parsing
+// Statement Parsing
 func (p *Parser) ParseVarStatement() *ast.VarStatement {
 	p.AdvanceToken()
+	var statement *ast.VarStatement
 
-	identifer := p.ParseExpression()
-	if _, ok := identifer.(*ast.IdentiferLiteral); !ok {
-		p.errors = append(p.errors, ParserError("Expected identifier at line "+identifer.String()))
+	if p.curToken.Type != token.IDENT {
+		p.errors = append(p.errors, ParserError("Expected identifier"))
 		return nil
 	}
 
-	statement := &ast.VarStatement{
-		Identifer: identifer,
+	statement = &ast.VarStatement{
+		Identifer: *p.ParseIdentiferLiteral(),
 	}
 
-	p.AdvanceToken()
+	p.CheckTokenAdvance(token.ASSIGN)
 	p.AdvanceToken()
 
 	statement.Value = p.ParseExpression()
@@ -324,7 +325,7 @@ func (p *Parser) ParseForStatement() *ast.ForStatement {
 
 //for var x = 10; x < 11; x += 1 { return a }
 
-//Literal Parsing
+// Literal Parsing
 func (p *Parser) ParseIdentiferLiteral() *ast.IdentiferLiteral {
 	return &ast.IdentiferLiteral{
 		Token: *p.curToken,
@@ -396,7 +397,7 @@ func (p *Parser) ParseArrayLiteral() *ast.ArrayLiteral {
 	return &array
 }
 
-//Helper Functions
+// Helper Functions
 func (p *Parser) CheckTokenAdvance(wanted token.TokenType) {
 	if p.nextToken.Type != wanted {
 		//some kind of error handle

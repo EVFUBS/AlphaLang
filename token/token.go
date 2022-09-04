@@ -26,6 +26,7 @@ const (
 	BANG     = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
+	MODULUS  = "%"
 
 	// Delimiters
 	COMMA     = ","

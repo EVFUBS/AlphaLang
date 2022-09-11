@@ -159,7 +159,7 @@ type ForStatement struct {
 	Initializer AstStatement
 	Conditional AstExpression
 	Increment   AstStatement
-	Body        BlockStatement
+	Body        AstStatement
 }
 
 func (fs *ForStatement) StatementNode() {}
@@ -312,7 +312,7 @@ func (bl *BooleanLiteral) String() string {
 }
 
 type FunctionLiteral struct {
-	Name       AstExpression
+	Name       string
 	Parameters []IdentiferLiteral
 	Body       BlockStatement
 }
@@ -322,7 +322,7 @@ func (fl *FunctionLiteral) String() string {
 	var output string
 
 	output += "Func( \n"
-	output += fl.Name.String()
+	output += fl.Name
 	output += "Params("
 	for _, ident := range fl.Parameters {
 		output += ident.String()
@@ -381,6 +381,23 @@ func (hl *HashLiteral) String() string {
 		output += key.String()
 		output += value.String()
 	}
+	output += ")"
+
+	return output
+}
+
+type Reassignment struct {
+	Ident IdentiferLiteral
+	Value AstExpression
+}
+
+func (ra *Reassignment) ExpressionNode() {}
+func (ra *Reassignment) String() string {
+	var output string
+
+	output += "Reassign("
+	output += ra.Ident.String()
+	output += ra.Value.String()
 	output += ")"
 
 	return output

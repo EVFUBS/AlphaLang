@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"fmt"
 	"hash/fnv"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ const (
 	BUILTIN      = "BUILTIN"
 	ARRAY        = "ARRAY"
 	HASH         = "HASH"
+	HASHKEY      = "HASHKEY"
+	HASHPAIR     = "HASHPAIR"
 )
 
 type Integer struct {
@@ -86,9 +89,10 @@ func (e *Error) Type() ObjectType { return ERROR }
 func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
 
 type Function struct {
-	Parameters []*ast.IdentiferLiteral
-	Body       *ast.BlockStatement
-	Env        *Environment
+	Name       string
+	Parameters []ast.IdentiferLiteral
+	Body       ast.BlockStatement
+	Env        Environment
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION }
@@ -113,8 +117,13 @@ func (f *Function) String() string {
 
 type BuiltinFunction func(args ...Object) Object
 
-func (bf *BuiltinFunction) Type() ObjectType { return BUILTIN }
-func (bf *BuiltinFunction) Inspect() string  { return "builtin function" }
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() ObjectType { return BUILTIN }
+func (b *Builtin) Inspect() string  { return b.String() }
+func (b *Builtin) String() string   { return "builtin function" }
 
 type Array struct {
 	Elements []Object
@@ -156,6 +165,9 @@ type Hash struct {
 	Pairs map[HashKey]HashPair
 }
 
+func (h *Hash) HashKey() HashKey {
+	return HashKey{Type: h.Type(), Value: 0}
+}
 func (h *Hash) Type() ObjectType { return HASH }
 func (h *Hash) Inspect() string  { return h.String() }
 
@@ -172,4 +184,8 @@ func (h *Hash) String() string {
 	out += "}"
 
 	return out
+}
+
+func NewError(format string, a ...interface{}) *Error {
+	return &Error{Message: fmt.Sprintf(format, a...)}
 }

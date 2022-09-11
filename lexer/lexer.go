@@ -63,14 +63,6 @@ func (l *Lexer) readIdent() string {
 	return l.input[position:l.nextPostition]
 }
 
-/* func (l *Lexer) readNum() string {
-	position := l.curPosition
-	for l.isNum() || l.ch == '.' {
-		l.readChar()
-	}
-	return l.input[position:l.curPosition]
-} */
-
 func (l *Lexer) readNum() string {
 	position := l.curPosition
 	for l.isNum(l.peekChar()) || l.peekChar() == '.' {
@@ -81,12 +73,12 @@ func (l *Lexer) readNum() string {
 
 func (l *Lexer) readString() string {
 	position := l.curPosition
-	l.readChar()
-	for l.ch != '"' {
+	for l.peekChar() != '"' {
 		l.readChar()
 	}
 	l.readChar()
-	return l.input[position:l.curPosition]
+	//return l.input[position:l.nextPostition]
+	return l.input[position+1 : l.nextPostition-1]
 }
 
 func (l *Lexer) NextToken() *token.Token {
@@ -108,6 +100,8 @@ func (l *Lexer) NextToken() *token.Token {
 		newToken = &token.Token{Type: token.RBRACKET, Literal: "]"}
 	case ';':
 		newToken = &token.Token{Type: token.SEMICOLON, Literal: ";"}
+	case ':':
+		newToken = &token.Token{Type: token.COLON, Literal: ":"}
 	case ',':
 		newToken = &token.Token{Type: token.COMMA, Literal: ","}
 	case '=':

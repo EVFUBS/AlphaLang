@@ -112,6 +112,8 @@ func (p *Parser) ParseExpression() ast.AstExpression {
 		token.NOTEQUAL:  p.parseInfixExpression,
 		token.LTHAN:     p.parseInfixExpression,
 		token.GTHAN:     p.parseInfixExpression,
+		token.GEQUAL:    p.parseInfixExpression,
+		token.LEQUAL:    p.parseInfixExpression,
 		token.LPAREN:    p.parseCallExpression,
 		token.INCREMENT: p.parseInfixExpression,
 		token.DECREMENT: p.parseInfixExpression,
@@ -119,7 +121,9 @@ func (p *Parser) ParseExpression() ast.AstExpression {
 	}
 	if _, ok := infixOperations[p.nextToken.Type]; ok {
 		node = infixOperations[p.nextToken.Type](node)
-		node = p.sortPrecedence(node.(*ast.InfixExpression))
+		if infix, ok := node.(*ast.InfixExpression); ok {
+			node = p.sortPrecedence(infix)
+		}
 		return node
 	}
 
@@ -195,17 +199,23 @@ func (p *Parser) parseIndexExpression(node ast.AstExpression) ast.AstExpression 
 }
 
 func (p *Parser) parseHashLiteral() ast.AstExpression {
-	var hashLiteral ast.HashLiteral
+	hash := make(map[ast.AstExpression]ast.AstExpression)
 	p.AdvanceToken()
-	for p.curToken.Type != token.RBRACE {
+	for p.nextToken.Type != token.RBRACE {
 		key := p.ParseExpression()
-		p.CheckTokenAdvance(token.COMMA)
+		p.AdvanceToken()
 		p.AdvanceToken()
 		value := p.ParseExpression()
-		hashLiteral.Pairs[key] = value
+		hash[key] = value
+		if p.nextToken.Type == token.COMMA {
+			p.AdvanceToken()
+			p.AdvanceToken()
+		}
 	}
 	p.AdvanceToken()
-	return &hashLiteral
+	return &ast.HashLiteral{
+		Pairs: hash,
+	}
 }
 
 // Statement Parsing
@@ -245,6 +255,10 @@ func (p *Parser) ParseExpressionStatement() *ast.ExpressionStatement {
 	switch p.curToken.Type {
 	case token.FUNCTION:
 		exprStatement.Expression = p.ParseFunctionLiteral()
+	}
+
+	if p.curToken.Type == token.IDENT && p.nextToken.Type == token.ASSIGN {
+		exprStatement.Expression = p.parseReassignment()
 	}
 
 	switch p.nextToken.Type {
@@ -311,14 +325,15 @@ func (p *Parser) ParseIfStatement() *ast.IfStatement {
 func (p *Parser) ParseForStatement() *ast.ForStatement {
 	var ForStatement ast.ForStatement
 
-	ForStatement.Initializer = *p.Parse()
+	p.AdvanceToken()
+	ForStatement.Initializer = p.ParseVarStatement()
 	p.CheckTokenAdvance(token.SEMICOLON)
 	p.CheckTokenAdvance(token.IDENT)
 	ForStatement.Conditional = p.ParseExpression()
 	p.CheckTokenAdvance(token.SEMICOLON)
 	ForStatement.Increment = *p.Parse()
 	p.CheckTokenAdvance(token.LBRACE)
-	ForStatement.Body = *p.ParseBlockStatement()
+	ForStatement.Body = p.ParseBlockStatement()
 	p.CheckTokenAdvance(token.RBRACE)
 	return &ForStatement
 }
@@ -360,7 +375,7 @@ func (p *Parser) ParseBoolLiteral() *ast.BooleanLiteral {
 func (p *Parser) ParseStringLiteral() *ast.StringLiteral {
 	return &ast.StringLiteral{
 		Token: *p.curToken,
-		Value: string(p.curToken.Literal),
+		Value: p.curToken.Literal,
 	}
 }
 
@@ -368,7 +383,7 @@ func (p *Parser) ParseFunctionLiteral() *ast.FunctionLiteral {
 	var function ast.FunctionLiteral
 
 	p.CheckTokenAdvance(token.IDENT)
-	function.Name = p.ParseIdentiferLiteral()
+	function.Name = p.curToken.Literal
 	p.AdvanceToken()
 	p.AdvanceToken()
 
@@ -395,6 +410,18 @@ func (p *Parser) ParseArrayLiteral() *ast.ArrayLiteral {
 	p.AdvanceToken()
 	array.Elements = p.parseExpressionList(token.RBRACKET)
 	return &array
+}
+
+func (p *Parser) parseReassignment() *ast.Reassignment {
+	Ident := p.ParseExpression()
+	identifer := Ident.(*ast.IdentiferLiteral)
+	p.CheckTokenAdvance(token.ASSIGN)
+	p.AdvanceToken()
+	Value := p.ParseExpression()
+	return &ast.Reassignment{
+		Ident: *identifer,
+		Value: Value,
+	}
 }
 
 // Helper Functions

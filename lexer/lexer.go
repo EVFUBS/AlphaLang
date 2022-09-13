@@ -59,7 +59,6 @@ func (l *Lexer) readIdent() string {
 	for l.isChar(l.peekChar()) {
 		l.readChar()
 	}
-
 	return l.input[position:l.nextPostition]
 }
 

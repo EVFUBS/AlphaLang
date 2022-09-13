@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/EVFUBS/AlphaLang/objects"
@@ -84,25 +85,47 @@ var BuiltIns = map[string]objects.Builtin{
 		},
 	},
 
+	"int": {
+		Fn: func(args ...objects.Object) objects.Object {
+			if len(args) != 1 {
+				return objects.NewError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			switch arg := args[0].(type) {
+			case *objects.Integer:
+				return arg
+			case *objects.Boolean:
+				if arg.Value {
+					return &objects.Integer{Value: 1}
+				}
+				return &objects.Integer{Value: 0}
+			case *objects.String:
+				value, err := strconv.ParseInt(arg.Value, 0, 64)
+				if err != nil {
+					return objects.NewError("could not convert %q to integer", arg.Value)
+				}
+				return &objects.Integer{Value: value}
+			default:
+				return objects.NewError("argument to `int` not supported, got %s", args[0].Type())
+			}
+		},
+	},
+
 	"input": {
 		Fn: func(args ...objects.Object) objects.Object {
-			if len(args) == 0 || len(args) == 1 {
-				if len(args) == 1 {
-					if arg, ok := args[0].(*objects.String); ok {
-						println(arg.Value)
-					}
+			if len(args) != 1 {
+				return objects.NewError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			switch arg := args[0].(type) {
+			case *objects.String:
+				fmt.Println(arg.Value)
+				reader := bufio.NewReader(os.Stdin)
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					fmt.Println(err)
 				}
-				inputReader := bufio.NewReader(os.Stdin)
-				input, _ := inputReader.ReadString('\n')
-				// check if string is int, float, string
-				if i, err := strconv.Atoi(input); err == nil {
-					return &objects.Integer{Value: int64(i)}
-				} else if f, err := strconv.ParseFloat(input, 64); err == nil {
-					return &objects.Float{Value: float64(f)}
-				} else {
-					return &objects.String{Value: input}
-				}
-			} else {
+				input = strings.TrimSpace(input)
+				return &objects.String{Value: input}
+			default:
 				return objects.NewError("argument to `input` not supported, got %s", args[0].Type())
 			}
 		},

@@ -176,6 +176,23 @@ func (fs *ForStatement) String() string {
 	return output
 }
 
+type WhileStatement struct {
+	Condition AstExpression
+	Body      AstStatement
+}
+
+func (ws *WhileStatement) StatementNode() {}
+func (ws *WhileStatement) String() string {
+	var output string
+
+	output += "WhileStatement("
+	output += ws.Condition.String()
+	output += ws.Body.String()
+	output += ")"
+
+	return output
+}
+
 // expressions
 type InfixExpression struct {
 	Left     AstExpression

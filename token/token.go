@@ -51,6 +51,7 @@ const (
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
 	FOR      = "FOR"
+	WHILE    = "WHILE"
 
 	// Types
 	STRING  = "STRING"
@@ -80,6 +81,7 @@ var keywords = map[string]TokenType{
 	"true":   TRUE,
 	"false":  FALSE,
 	"for":    FOR,
+	"while":  WHILE,
 }
 
 func KeywordLookUp(word string) TokenType {

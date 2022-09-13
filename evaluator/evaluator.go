@@ -58,6 +58,8 @@ func (e *Evaluator) Eval(node ast.AstNode, env *objects.Environment) objects.Obj
 		return e.evalIfStatement(node, env)
 	case *ast.ForStatement:
 		return e.evalForStatement(node, env)
+	case *ast.WhileStatement:
+		return e.evalWhileStatement(node, env)
 	}
 	return nil
 }
@@ -111,18 +113,16 @@ func (e *Evaluator) evalReturnStatement(node *ast.ReturnStatement, env *objects.
 }
 
 func (e *Evaluator) evalIfStatement(node *ast.IfStatement, env *objects.Environment) objects.Object {
-	if e.Eval(node.If.Condition, env).(*objects.Boolean).Value {
+	if obj := e.Eval(node.If.Condition, env).(*objects.Boolean); obj.Value {
 		return e.Eval(&node.If.Consequence, env)
-	} else if node.Elif != nil {
+	} else {
 		for _, elif := range node.Elif {
 			if e.Eval(elif.Condition, env).(*objects.Boolean).Value {
 				return e.Eval(&elif.Consequence, env)
 			}
 		}
-	} else {
 		return e.Eval(&node.Else, env)
 	}
-	return nil
 }
 
 func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *objects.Environment) objects.Object {
@@ -135,6 +135,20 @@ func (e *Evaluator) evalForStatement(node *ast.ForStatement, env *objects.Enviro
 			break
 		}
 		e.Eval(node.Increment, env)
+	}
+	return nil
+}
+
+func (e *Evaluator) evalWhileStatement(node *ast.WhileStatement, env *objects.Environment) objects.Object {
+	for {
+		condition := e.Eval(node.Condition, env)
+		if boolean, ok := condition.(*objects.Boolean); ok {
+			if boolean.Value {
+				e.Eval(node.Body, env)
+			} else {
+				break
+			}
+		}
 	}
 	return nil
 }
@@ -182,7 +196,8 @@ func (e *Evaluator) applyFunction(fn objects.Object, args []objects.Object, env 
 		return unwrapReturnValue(evaluated)
 
 	case *objects.Builtin:
-		return fn.Fn(args...)
+		obj := fn.Fn(args...)
+		return obj
 	}
 
 	return nil
@@ -206,6 +221,8 @@ func (e *Evaluator) evalInfixExpression(node *ast.InfixExpression, env *objects.
 		return e.evalNumericInfixExpression(node, leftVal, rightVal, env)
 	} else if leftVal.Type() == objects.STRING && rightVal.Type() == objects.STRING {
 		return e.evalStringInfixExpression(node, leftVal, rightVal)
+	} else if leftVal.Type() == objects.BOOLEAN && rightVal.Type() == objects.BOOLEAN {
+		return e.evalBooleanInfixExpression(node, leftVal, rightVal)
 	} else {
 		return NewError("type mismatch: %s %s %s", leftVal.Type(), node.Operator, rightVal.Type())
 	}
@@ -293,6 +310,20 @@ func (e *Evaluator) evalStringInfixExpression(node *ast.InfixExpression, left, r
 	}
 	//return error
 	return nil
+}
+
+func (e *Evaluator) evalBooleanInfixExpression(node *ast.InfixExpression, left, right objects.Object) objects.Object {
+	leftVal := left.(*objects.Boolean).Value
+	rightVal := right.(*objects.Boolean).Value
+
+	switch node.Operator.Literal {
+	case "==":
+		return &objects.Boolean{Value: leftVal == rightVal}
+	case "!=":
+		return &objects.Boolean{Value: leftVal != rightVal}
+	default:
+		return NewError("operator not supported for boolean expression")
+	}
 }
 
 func (e *Evaluator) evalPrefixExpression(node *ast.PrefixExpression, env *objects.Environment) objects.Object {

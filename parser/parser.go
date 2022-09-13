@@ -64,6 +64,8 @@ func (p *Parser) Parse() *ast.AstStatement {
 		statement = p.ParseIfStatement()
 	case token.FOR:
 		statement = p.ParseForStatement()
+	case token.WHILE:
+		statement = p.parseWhileStatement()
 	default:
 		statement = p.ParseExpressionStatement()
 	}
@@ -338,7 +340,19 @@ func (p *Parser) ParseForStatement() *ast.ForStatement {
 	return &ForStatement
 }
 
-//for var x = 10; x < 11; x += 1 { return a }
+//for var x = 10; x < 11; x += 1 { println(x) }
+
+func (p *Parser) parseWhileStatement() *ast.WhileStatement {
+	var WhileStatement ast.WhileStatement
+	p.AdvanceToken()
+	WhileStatement.Condition = p.ParseExpression()
+	p.CheckTokenAdvance(token.LBRACE)
+	WhileStatement.Body = p.ParseBlockStatement()
+	p.CheckTokenAdvance(token.RBRACE)
+	return &WhileStatement
+}
+
+// while x < 10 {println(x)}
 
 // Literal Parsing
 func (p *Parser) ParseIdentiferLiteral() *ast.IdentiferLiteral {

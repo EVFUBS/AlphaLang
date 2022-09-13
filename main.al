@@ -42,7 +42,7 @@ println(num1)
 var retest = returnTest(10)
 println(retest)
 
-var indexTest = [1,2,3,4]
+var indexTest = [5,6,7,8]
 println(indexTest[2])
 
 var mapTest = {"test1": 1, "test2": 2}
@@ -54,7 +54,7 @@ println(mapTest)
 var userInput = input("Enter your name")
 print("this is your name ", userInput)
 
-var appendTest = [1,2,3]
+var appendTest = [9,10,11]
 append(appendTest, 4)
 println(appendTest)
 

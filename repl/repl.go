@@ -54,12 +54,14 @@ func RunFile(file io.Reader) {
 	scanner := bufio.NewScanner(file)
 	var code string
 	for scanner.Scan() {
-		code += scanner.Text()
+		line := scanner.Text()
+		line += "\n"
+		code += line
 	}
 	l := lexer.New(code)
 	p := parser.New(l)
 	ast := p.ParseProgram()
-	if len(p.Errors()) > 0 {
+	/* if len(p.Errors()) > 0 {
 		for _, err := range p.Errors() {
 			fmt.Println(err)
 		}
@@ -67,7 +69,7 @@ func RunFile(file io.Reader) {
 		for _, statement := range ast.Statements {
 			fmt.Println(statement.String())
 		}
-	}
+	} */
 	e := evaluator.New()
 	evaluated := e.Eval(ast, e.Env)
 	if evaluated != nil {

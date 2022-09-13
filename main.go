@@ -20,6 +20,8 @@ func main() {
 		} else {
 			panic("File must have .al extension")
 		}
+		//convert jsValue to string
+
 	} else {
 		repl.Start(os.Stdin, os.Stdout)
 	}
